@@ -1,0 +1,24 @@
+{
+  "arch": "vit_b_16",
+  "img_size": 224,
+  "normalize_mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "normalize_std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "class_to_idx": {
+    "dry": 0,
+    "normal": 1,
+    "oily": 2
+  },
+  "idx_to_class": {
+    "0": "dry",
+    "1": "normal",
+    "2": "oily"
+  }
+}
