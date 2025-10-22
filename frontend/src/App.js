@@ -980,6 +980,352 @@ const AnalysisHistory = () => {
   );
 };
 
+// Product Recommendations Component
+const ProductRecommendations = () => {
+  const { user } = useAuth();
+  const [recommendations, setRecommendations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      try {
+        // Get user's latest skin type from analysis
+        const historyResponse = await axios.get(`${API}/analysis-history`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        
+        if (historyResponse.data.length > 0) {
+          const latestSkinType = historyResponse.data[0].skin_type;
+          
+          const response = await axios.get(`${API}/recommendations/${latestSkinType}`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
+          setRecommendations(response.data);
+        }
+      } catch (error) {
+        toast.error('Öneriler alınırken hata oluştu');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecommendations();
+  }, []);
+
+  const handleInteraction = async (recommendationId, interactionType) => {
+    try {
+      await axios.post(`${API}/recommendations/${recommendationId}/interact?interaction_type=${interactionType}`, {}, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+    } catch (error) {
+      console.error('Interaction tracking failed:', error);
+    }
+  };
+
+  const filteredRecommendations = selectedCategory === 'all' 
+    ? recommendations 
+    : recommendations.filter(rec => rec.category === selectedCategory);
+
+  const categories = ['all', 'cleanser', 'moisturizer', 'serum', 'sunscreen', 'toner'];
+  const categoryLabels = {
+    'all': 'Tümü',
+    'cleanser': 'Temizleyici',
+    'moisturizer': 'Nemlendirici',
+    'serum': 'Serum',
+    'sunscreen': 'Güneş Kremi',
+    'toner': 'Toner'
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-8">
+        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card className="border-0 shadow-xl bg-white/70 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="text-2xl text-slate-800">Kişiselleştirilmiş Ürün Önerileri</CardTitle>
+          <CardDescription>
+            Cilt analizinize göre özenle seçilmiş ürünler
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Category Filter */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            {categories.map((category) => (
+              <Button
+                key={category}
+                variant={selectedCategory === category ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedCategory(category)}
+                className="rounded-full"
+              >
+                {categoryLabels[category]}
+              </Button>
+            ))}
+          </div>
+
+          {/* Recommendations Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredRecommendations.map((rec) => (
+              <Card key={rec.id} className="border hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{rec.name}</CardTitle>
+                      <p className="text-sm text-slate-600">{rec.brand}</p>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">
+                      {categoryLabels[rec.category]}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-slate-700">{rec.description}</p>
+                  
+                  {rec.price_range && (
+                    <p className="text-sm font-medium text-green-600">{rec.price_range}</p>
+                  )}
+
+                  {rec.benefits && rec.benefits.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-slate-700 mb-2">Faydalar:</h4>
+                      <div className="flex flex-wrap gap-1">
+                        {rec.benefits.slice(0, 3).map((benefit, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {benefit}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {rec.recommendation_reason && (
+                    <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+                      <p className="text-sm text-blue-800">{rec.recommendation_reason}</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => handleInteraction(rec.id, 'click')}
+                    >
+                      İncele
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => {
+                        handleInteraction(rec.id, 'like');
+                        toast.success('Beğeni kaydedildi!');
+                      }}
+                    >
+                      👍
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {filteredRecommendations.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-slate-500">Bu kategori için öneri bulunamadı</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// Admin Panel Component
+const AdminPanel = () => {
+  const [adminStats, setAdminStats] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('dashboard');
+
+  useEffect(() => {
+    const fetchAdminData = async () => {
+      try {
+        const [statsRes, usersRes, logsRes] = await Promise.all([
+          axios.get(`${API}/admin/dashboard`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          }),
+          axios.get(`${API}/admin/users?limit=20`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          }),
+          axios.get(`${API}/admin/logs?limit=50`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          })
+        ]);
+
+        setAdminStats(statsRes.data);
+        setUsers(usersRes.data);
+        setLogs(logsRes.data);
+      } catch (error) {
+        toast.error('Admin verileri alınırken hata oluştu');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAdminData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-8">
+        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card className="border-0 shadow-xl bg-white/70 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="text-2xl text-slate-800">Admin Panel</CardTitle>
+          <CardDescription>
+            Sistem yönetimi ve istatistikler
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              <TabsTrigger value="users">Kullanıcılar</TabsTrigger>
+              <TabsTrigger value="logs">Loglar</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="dashboard" className="mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-center">
+                      <h3 className="text-2xl font-bold text-blue-600">{adminStats?.total_users || 0}</h3>
+                      <p className="text-sm text-slate-600">Toplam Kullanıcı</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-center">
+                      <h3 className="text-2xl font-bold text-green-600">{adminStats?.active_subscriptions || 0}</h3>
+                      <p className="text-sm text-slate-600">Aktif Abonelik</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-center">
+                      <h3 className="text-2xl font-bold text-purple-600">{adminStats?.total_analyses || 0}</h3>
+                      <p className="text-sm text-slate-600">Toplam Analiz</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-center">
+                      <h3 className="text-2xl font-bold text-orange-600">{adminStats?.today_analyses || 0}</h3>
+                      <p className="text-sm text-slate-600">Bugünkü Analiz</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {adminStats?.package_distribution && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Paket Dağılımı</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {Object.entries(adminStats.package_distribution).map(([package_type, count]) => (
+                        <div key={package_type} className="flex justify-between items-center">
+                          <span className="capitalize">{package_type}</span>
+                          <span className="font-medium">{count} kullanıcı</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="users" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Kullanıcı Listesi</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {users.map((user) => (
+                      <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <h4 className="font-medium">{user.full_name}</h4>
+                          <p className="text-sm text-slate-600">{user.email}</p>
+                          <p className="text-xs text-slate-500">
+                            {user.package_type} - {user.credits_remaining} kredi
+                          </p>
+                        </div>
+                        <Badge className={
+                          user.package_type === 'premium' ? 'bg-purple-100 text-purple-800' :
+                          user.package_type === 'standard' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                        }>
+                          {user.package_type}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="logs" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sistem Aktivite Logları</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {logs.map((log, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg text-sm">
+                        <div>
+                          <p className="font-medium">
+                            {log.user_info?.name || 'Bilinmeyen'} - {log.skin_type} cilt analizi
+                          </p>
+                          <p className="text-slate-600">{log.user_info?.email}</p>
+                        </div>
+                        <span className="text-slate-500">
+                          {new Date(log.timestamp).toLocaleString('tr-TR')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
 // Package Manager Component
 const PackageManager = () => {
   const { user } = useAuth();
