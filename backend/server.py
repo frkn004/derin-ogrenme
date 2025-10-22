@@ -1,6 +1,5 @@
 from fastapi import FastAPI, APIRouter, UploadFile, File, HTTPException, Depends, status
-from fastapi.responses import JSONResponse
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import JSONResponse, StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -25,6 +24,15 @@ from io import BytesIO
 import bcrypt
 import jwt
 from enum import Enum
+# PDF generation imports
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+from reportlab.pdfgen import canvas
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+import base64
 
 
 ROOT_DIR = Path(__file__).parent
@@ -47,7 +55,7 @@ app = FastAPI(title="DermaVision AI", description="AI-Powered Skin Analysis Plat
 api_router = APIRouter(prefix="/api")
 
 # Security
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 # Global variables for model
 model = None
@@ -162,6 +170,7 @@ class SkinAnalysisResult(BaseModel):
     probabilities: Dict[str, float]
     recommendations: Dict
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    image_data: Optional[str] = None  # Base64 encoded image for PDF
 
 class DashboardStats(BaseModel):
     total_analyses: int
@@ -182,7 +191,10 @@ def create_access_token(data: dict) -> str:
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+async def get_current_user(credentials=Depends(security)) -> dict:
+    if credentials is None:
+        raise HTTPException(status_code=401, detail="Token gerekli")
+    
     try:
         token = credentials.credentials
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
@@ -199,6 +211,146 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=401, detail="Token süresi dolmuş")
     except jwt.JWTError:
         raise HTTPException(status_code=401, detail="Geçersiz token")
+
+def generate_pdf_report(analysis: SkinAnalysisResult, user_name: str) -> BytesIO:
+    """Generate PDF report for skin analysis"""
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.8*inch)
+    
+    # Get styles
+    styles = getSampleStyleSheet()
+    
+    # Custom styles
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        spaceAfter=30,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor('#1e40af')
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Heading2'],
+        fontSize=16,
+        spaceAfter=20,
+        textColor=colors.HexColor('#374151')
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=12,
+        textColor=colors.HexColor('#374151')
+    )
+    
+    # Content
+    story = []
+    
+    # Title
+    story.append(Paragraph("DermaVision AI", title_style))
+    story.append(Paragraph("Cilt Analizi Raporu", subtitle_style))
+    story.append(Spacer(1, 0.3*inch))
+    
+    # User Info
+    user_data = [
+        ['Hasta Adı:', user_name],
+        ['Analiz Tarihi:', analysis.timestamp.strftime('%d.%m.%Y %H:%M')],
+        ['Rapor ID:', analysis.id[:8]]
+    ]
+    
+    user_table = Table(user_data, colWidths=[2*inch, 3*inch])
+    user_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#374151')),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb'))
+    ]))
+    
+    story.append(user_table)
+    story.append(Spacer(1, 0.4*inch))
+    
+    # Analysis Results
+    story.append(Paragraph("Analiz Sonuçları", subtitle_style))
+    
+    # Skin type result
+    skin_type_turkish = {
+        'dry': 'Kuru Cilt',
+        'oily': 'Yağlı Cilt', 
+        'normal': 'Normal Cilt'
+    }.get(analysis.skin_type, analysis.skin_type)
+    
+    confidence_percent = round(analysis.confidence * 100)
+    
+    result_text = f"""<b>Tespit Edilen Cilt Tipi:</b> {skin_type_turkish}<br/>
+    <b>Güven Oranı:</b> %{confidence_percent}<br/><br/>
+    {analysis.recommendations.get('description', '')}
+    """
+    
+    story.append(Paragraph(result_text, normal_style))
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Probability Distribution
+    story.append(Paragraph("Detaylı Analiz Dağılımı", subtitle_style))
+    
+    prob_data = [['Cilt Tipi', 'Olasılık']]
+    for skin_type, prob in analysis.probabilities.items():
+        turkish_name = {
+            'dry': 'Kuru Cilt',
+            'oily': 'Yağlı Cilt',
+            'normal': 'Normal Cilt'
+        }.get(skin_type, skin_type)
+        prob_data.append([turkish_name, f"%{round(prob * 100)}"])
+    
+    prob_table = Table(prob_data, colWidths=[2.5*inch, 1.5*inch])
+    prob_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3b82f6')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb'))
+    ]))
+    
+    story.append(prob_table)
+    story.append(Spacer(1, 0.4*inch))
+    
+    # Product Recommendations
+    if 'products' in analysis.recommendations:
+        story.append(Paragraph("Önerilen Ürünler", subtitle_style))
+        
+        for i, product in enumerate(analysis.recommendations['products'], 1):
+            story.append(Paragraph(f"{i}. {product}", normal_style))
+        
+        story.append(Spacer(1, 0.3*inch))
+    
+    # Care Tips
+    if 'tips' in analysis.recommendations:
+        story.append(Paragraph("Bakım Önerileri", subtitle_style))
+        
+        for i, tip in enumerate(analysis.recommendations['tips'], 1):
+            story.append(Paragraph(f"{i}. {tip}", normal_style))
+        
+        story.append(Spacer(1, 0.3*inch))
+    
+    # Footer
+    story.append(Spacer(1, 0.5*inch))
+    footer_text = """<i>Bu rapor DermaVision AI tarafından oluşturulmuştur. 
+    Sonuçlar bilgilendirme amaçlıdır ve profesyonel tıbbi görüş yerine geçmez.</i>
+    """
+    story.append(Paragraph(footer_text, normal_style))
+    
+    # Build PDF
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
 
 async def download_file(url: str, destination: Path) -> None:
     """Download file from URL to destination"""
@@ -404,13 +556,19 @@ async def analyze_skin(file: UploadFile = File(...), current_user: dict = Depend
         # Get recommendations
         recommendations = SKIN_RECOMMENDATIONS.get(skin_type, {})
         
+        # Convert image to base64 for PDF generation (if user has standard/premium)
+        image_data = None
+        if current_user["package_type"] in ["standard", "premium"]:
+            image_data = base64.b64encode(image_bytes).decode('utf-8')
+        
         # Create result
         result = SkinAnalysisResult(
             user_id=current_user["id"],
             skin_type=skin_type,
             confidence=confidence,
             probabilities=probabilities,
-            recommendations=recommendations
+            recommendations=recommendations,
+            image_data=image_data
         )
         
         # Save to database
@@ -439,6 +597,40 @@ async def get_analysis_history(current_user: dict = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Geçmiş alınamadı: {str(e)}")
 
+@api_router.get("/analysis/{analysis_id}/pdf")
+async def download_analysis_pdf(analysis_id: str, current_user: dict = Depends(get_current_user)):
+    """Download PDF report for specific analysis"""
+    
+    # Check if user has access to PDF feature
+    if current_user["package_type"] == "demo":
+        raise HTTPException(status_code=403, detail="PDF raporu için Standart veya Premium paket gereklidir")
+    
+    # Get analysis
+    analysis_doc = await db.skin_analyses.find_one({
+        "id": analysis_id,
+        "user_id": current_user["id"]
+    })
+    
+    if not analysis_doc:
+        raise HTTPException(status_code=404, detail="Analiz bulunamadı")
+    
+    analysis = SkinAnalysisResult(**analysis_doc)
+    
+    try:
+        # Generate PDF
+        pdf_buffer = generate_pdf_report(analysis, current_user["full_name"])
+        
+        # Return PDF as streaming response
+        return StreamingResponse(
+            BytesIO(pdf_buffer.read()),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=dermavision_analiz_{analysis_id[:8]}.pdf"}
+        )
+        
+    except Exception as e:
+        logger.error(f"PDF generation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"PDF oluşturulamadı: {str(e)}")
+
 # Package Management Routes
 @api_router.post("/upgrade-package/{package_type}")
 async def upgrade_package(package_type: PackageType, current_user: dict = Depends(get_current_user)):
@@ -446,7 +638,7 @@ async def upgrade_package(package_type: PackageType, current_user: dict = Depend
     if package_type == PackageType.DEMO:
         raise HTTPException(status_code=400, detail="Demo paketine geçiş yapılamaz")
     
-    # TODO: Add payment processing here
+    # TODO: Add payment processing here (Iyzico integration)
     
     # Update user package
     await db.users.update_one(

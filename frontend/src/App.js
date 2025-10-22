@@ -399,6 +399,30 @@ const SkinAnalyzer = () => {
     }
   };
 
+  const downloadPDF = async (analysisId) => {
+    try {
+      const response = await axios.get(`${API}/analysis/${analysisId}/pdf`, {
+        headers: { 
+          'Authorization': `Bearer ${localStorage.getItem('token')}` 
+        },
+        responseType: 'blob'
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `dermavision_analiz_${analysisId.slice(0, 8)}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      toast.success('PDF raporu indirildi!');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'PDF indirilemedi');
+    }
+  };
+
   const getSkinTypeColor = (skinType) => {
     switch (skinType) {
       case 'dry': return 'bg-amber-100 text-amber-800 border-amber-300';
@@ -515,6 +539,21 @@ const SkinAnalyzer = () => {
                 </p>
               </div>
 
+              {/* PDF Download Button */}
+              <div className="flex justify-center">
+                <Button
+                  onClick={() => downloadPDF(analysisResult.id)}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                  data-testid="download-pdf-button"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  PDF Rapor İndir
+                </Button>
+              </div>
+
               {/* Probability Distribution */}
               <div>
                 <h4 className="font-medium text-slate-700 mb-4">Detaylı Analiz</h4>
@@ -595,6 +634,7 @@ const SkinAnalyzer = () => {
 
 // Analysis History Component
 const AnalysisHistory = () => {
+  const { user } = useAuth();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -614,6 +654,29 @@ const AnalysisHistory = () => {
 
     fetchHistory();
   }, []);
+
+  const downloadPDF = async (analysisId) => {
+    try {
+      const response = await axios.get(`${API}/analysis/${analysisId}/pdf`, {
+        headers: { 
+          'Authorization': `Bearer ${localStorage.getItem('token')}` 
+        },
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `dermavision_analiz_${analysisId.slice(0, 8)}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      toast.success('PDF raporu indirildi!');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'PDF indirilemedi');
+    }
+  };
 
   const getSkinTypeLabel = (skinType) => {
     switch (skinType) {
@@ -656,9 +719,21 @@ const AnalysisHistory = () => {
                       Güven: %{Math.round(analysis.confidence * 100)}
                     </p>
                   </div>
-                  <p className="text-sm text-slate-500">
-                    {new Date(analysis.timestamp).toLocaleDateString('tr-TR')}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-slate-500">
+                      {new Date(analysis.timestamp).toLocaleDateString('tr-TR')}
+                    </p>
+                    {(user?.package_type === 'standard' || user?.package_type === 'premium') && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => downloadPDF(analysis.id)}
+                        className="text-xs"
+                      >
+                        PDF
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <p className="text-sm text-slate-700">
                   {analysis.recommendations.description}
