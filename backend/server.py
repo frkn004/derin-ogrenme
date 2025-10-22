@@ -70,6 +70,10 @@ val_transform = None
 idx_to_class = None
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
+# Initialize services
+admin_service = None
+recommendation_engine = None
+
 # Package types
 class PackageType(str, Enum):
     DEMO = "demo"
