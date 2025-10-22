@@ -480,9 +480,19 @@ const Dashboard = () => {
             <AnalysisHistory />
           </TabsContent>
           
+          <TabsContent value="recommendations" className="mt-6">
+            <ProductRecommendations />
+          </TabsContent>
+          
           <TabsContent value="packages" className="mt-6">
             <PackageManager />
           </TabsContent>
+          
+          {(user?.email === "admin@dermavision.ai" || user?.email === "muratsimsek003@gmail.com") && (
+            <TabsContent value="admin" className="mt-6">
+              <AdminPanel />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>
