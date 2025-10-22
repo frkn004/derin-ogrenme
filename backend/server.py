@@ -801,6 +801,111 @@ async def upgrade_package(package_type: PackageType, current_user: dict = Depend
     
     return {"message": f"Paket {package_type.value} olarak güncellendi", "credits": PACKAGE_CREDITS[package_type]}
 
+# Admin Routes
+@api_router.get("/admin/dashboard")
+async def get_admin_dashboard(current_user: dict = Depends(get_current_user)):
+    """Get admin dashboard statistics"""
+    # Check if user is admin (you can add admin role check here)
+    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com"]:  # Replace with actual admin emails
+        raise HTTPException(status_code=403, detail="Admin yetkisi gerekli")
+    
+    stats = await admin_service.get_dashboard_stats()
+    return stats
+
+@api_router.get("/admin/users")
+async def get_admin_users(skip: int = 0, limit: int = 50, current_user: dict = Depends(get_current_user)):
+    """Get users list for admin"""
+    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com"]:
+        raise HTTPException(status_code=403, detail="Admin yetkisi gerekli")
+    
+    users = await admin_service.get_users_list(skip, limit)
+    return users
+
+@api_router.get("/admin/user/{user_id}")
+async def get_admin_user_details(user_id: str, current_user: dict = Depends(get_current_user)):
+    """Get detailed user information"""
+    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com"]:
+        raise HTTPException(status_code=403, detail="Admin yetkisi gerekli")
+    
+    user = await admin_service.get_user_details(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+    
+    return user
+
+@api_router.put("/admin/user/{user_id}/package")
+async def update_user_package_admin(user_id: str, update_data: AdminUserUpdate, current_user: dict = Depends(get_current_user)):
+    """Update user package (admin only)"""
+    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com"]:
+        raise HTTPException(status_code=403, detail="Admin yetkisi gerekli")
+    
+    success = await admin_service.update_user_package(user_id, update_data.package_type, update_data.credits_remaining)
+    if success:
+        return {"message": "Kullanıcı paketi güncellendi"}
+    else:
+        raise HTTPException(status_code=400, detail="Güncelleme başarısız")
+
+@api_router.get("/admin/logs")
+async def get_admin_logs(skip: int = 0, limit: int = 100, current_user: dict = Depends(get_current_user)):
+    """Get system logs"""
+    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com"]:
+        raise HTTPException(status_code=403, detail="Admin yetkisi gerekli")
+    
+    logs = await admin_service.get_system_logs(skip, limit)
+    return logs
+
+# Product Recommendations Routes
+@api_router.post("/admin/recommendations")
+async def create_product_recommendation(recommendation: ProductRecommendationCreate, current_user: dict = Depends(get_current_user)):
+    """Create new product recommendation"""
+    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com"]:
+        raise HTTPException(status_code=403, detail="Admin yetkisi gerekli")
+    
+    rec_id = await admin_service.create_product_recommendation(recommendation.dict())
+    if rec_id:
+        return {"message": "Ürün önerisi oluşturuldu", "id": rec_id}
+    else:
+        raise HTTPException(status_code=400, detail="Ürün önerisi oluşturulamadı")
+
+@api_router.get("/recommendations/{skin_type}")
+async def get_recommendations(skin_type: str, current_user: dict = Depends(get_current_user)):
+    """Get personalized product recommendations"""
+    try:
+        # Get user's latest analysis for confidence score
+        latest_analysis = await db.skin_analyses.find_one(
+            {"user_id": current_user["id"]},
+            sort=[("timestamp", -1)]
+        )
+        
+        confidence = latest_analysis.get("confidence", 0.8) if latest_analysis else 0.8
+        
+        recommendations = await recommendation_engine.get_personalized_recommendations(
+            current_user["id"], skin_type, confidence
+        )
+        
+        return recommendations
+    except Exception as e:
+        logger.error(f"Get recommendations error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Öneriler alınamadı")
+
+@api_router.post("/recommendations/{recommendation_id}/interact")
+async def track_recommendation_interaction(
+    recommendation_id: str, 
+    interaction_type: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Track user interaction with recommendations"""
+    await recommendation_engine.track_recommendation_interaction(
+        current_user["id"], recommendation_id, interaction_type
+    )
+    return {"message": "Etkileşim kaydedildi"}
+
+@api_router.get("/recommendations/trending")
+async def get_trending_products():
+    """Get trending products"""
+    trending = await recommendation_engine.get_trending_products()
+    return trending
+
 # General Routes
 @api_router.get("/")
 async def root():
