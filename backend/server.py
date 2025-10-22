@@ -35,6 +35,11 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 import base64
 
+# Import new services
+from iyzico_service import iyzico_service
+from admin_service import AdminService
+from recommendation_engine import RecommendationEngine
+
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
