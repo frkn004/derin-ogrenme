@@ -403,41 +403,56 @@ const SkinAnalyzer = () => {
     try {
       toast.info('PDF hazırlanıyor...');
       
-      const response = await axios.get(`${API}/analysis/${analysisId}/pdf`, {
-        headers: { 
-          'Authorization': `Bearer ${localStorage.getItem('token')}` 
-        },
-        responseType: 'blob'
+      // Alternative method: Direct URL with authentication
+      const token = localStorage.getItem('token');
+      const pdfUrl = `${API}/analysis/${analysisId}/pdf`;
+      
+      const response = await fetch(pdfUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/pdf'
+        }
       });
       
-      // Check if response has data
-      if (response.data && response.data.size > 0) {
-        // Create download link
-        const blob = new Blob([response.data], { type: 'application/pdf' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `dermavision_analiz_${analysisId.slice(0, 8)}.pdf`;
+      if (response.ok) {
+        const blob = await response.blob();
         
-        // Force download
-        document.body.appendChild(link);
-        link.click();
-        
-        // Cleanup
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        
-        toast.success(`PDF raporu indirildi! (${Math.round(blob.size/1024)} KB)`);
+        if (blob && blob.size > 0) {
+          // Create download link
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `dermavision_analiz_${analysisId.substring(0, 8)}.pdf`;
+          link.style.display = 'none';
+          
+          // Trigger download
+          document.body.appendChild(link);
+          link.click();
+          
+          // Cleanup
+          setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }, 100);
+          
+          toast.success(`PDF raporu indirildi! (${Math.round(blob.size/1024)} KB)`);
+        } else {
+          toast.error('PDF dosyası boş');
+        }
       } else {
-        toast.error('PDF dosyası boş veya hatalı');
+        const errorText = await response.text();
+        console.error('PDF download failed:', response.status, errorText);
+        
+        if (response.status === 403) {
+          toast.error('PDF raporu için Standart veya Premium paket gereklidir');
+        } else {
+          toast.error(`PDF indirilemedi: ${response.status}`);
+        }
       }
     } catch (error) {
       console.error('PDF download error:', error);
-      if (error.response?.status === 403) {
-        toast.error('PDF raporu için Standart veya Premium paket gereklidir');
-      } else {
-        toast.error(error.response?.data?.detail || 'PDF indirilemedi');
-      }
+      toast.error('PDF indirme hatası: ' + error.message);
     }
   };
 
