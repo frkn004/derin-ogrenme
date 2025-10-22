@@ -599,7 +599,7 @@ async def get_analysis_history(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Geçmiş alınamadı: {str(e)}")
 
 @api_router.get("/analysis/{analysis_id}/pdf")
-async def download_analysis_pdf(analysis_id: str, current_user: dict = Depends(get_current_user)):
+async def download_analysis_pdf(analysis_id: str, token: str = None, current_user: dict = Depends(get_current_user)):
     """Download PDF report for specific analysis"""
     
     # Check if user has access to PDF feature
