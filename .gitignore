@@ -79,3 +79,7 @@ agenthub/agents/youtube/db
 # Mobile development
 android-sdk/ backend/models/vit_b16_skin_state_dict.pth
 backend/models/vit_b16_skin_state_dict.pth
+-e 
+# Environment files
+*.env
+*.env.*
