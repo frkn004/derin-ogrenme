@@ -1357,7 +1357,31 @@ const PackageManager = () => {
     }
   ];
 
-  const handleUpgrade = async (packageType) => {
+  const handlePayment = async (packageType) => {
+    try {
+      toast.info('Ödeme sayfası hazırlanıyor...');
+      
+      const response = await axios.post(`${API}/payment/initialize`, 
+        { package_type: packageType },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        }
+      );
+      
+      if (response.data.success) {
+        // Redirect to İyzico payment page
+        window.open(response.data.payment_page_url, '_blank');
+        toast.success('Ödeme sayfasına yönlendirildiniz!');
+      } else {
+        toast.error('Ödeme başlatılamadı');
+      }
+    } catch (error) {
+      toast.error('Ödeme hatası: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const handleDirectUpgrade = async (packageType) => {
+    // Direct upgrade for admin/testing
     try {
       await axios.post(`${API}/upgrade-package/${packageType}`, {}, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
