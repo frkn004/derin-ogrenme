@@ -282,8 +282,47 @@ const AuthPage = () => {
               }
             </button>
           </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+            </Card>
+          </div>
+        </div>
+        
+        {/* Bottom Features */}
+        <div className="mt-20 text-center">
+          <h3 className="text-2xl font-semibold text-slate-800 mb-8">Neden DermaVision AI?</h3>
+          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            <div className="text-center p-6">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h4 className="font-semibold text-slate-800 mb-2">Hızlı Analiz</h4>
+              <p className="text-slate-600 text-sm">Sadece fotoğraf yükleyin, saniyeler içinde detaylı cilt analizi alın.</p>
+            </div>
+            
+            <div className="text-center p-6">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h4 className="font-semibold text-slate-800 mb-2">Bilimsel Doğruluk</h4>
+              <p className="text-slate-600 text-sm">Vision Transformer AI modelimiz %95 doğruluk oranında çalışır.</p>
+            </div>
+            
+            <div className="text-center p-6">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </div>
+              <h4 className="font-semibold text-slate-800 mb-2">Kişisel Öneriler</h4>
+              <p className="text-slate-600 text-sm">Cilt tipinize özel bakım rutini ve ürün önerileri alın.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
