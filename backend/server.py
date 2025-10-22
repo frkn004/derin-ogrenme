@@ -620,12 +620,20 @@ async def download_analysis_pdf(analysis_id: str, current_user: dict = Depends(g
     try:
         # Generate PDF
         pdf_buffer = generate_pdf_report(analysis, current_user["full_name"])
+        pdf_content = pdf_buffer.getvalue()
         
-        # Return PDF as streaming response
+        logger.info(f"Generated PDF size: {len(pdf_content)} bytes for analysis {analysis_id}")
+        
+        # Return PDF with proper headers
         return StreamingResponse(
-            BytesIO(pdf_buffer.read()),
+            BytesIO(pdf_content),
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename=dermavision_analiz_{analysis_id[:8]}.pdf"}
+            headers={
+                "Content-Disposition": f"attachment; filename=dermavision_analiz_{analysis_id[:8]}.pdf",
+                "Content-Length": str(len(pdf_content)),
+                "Cache-Control": "no-cache",
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            }
         )
         
     except Exception as e:
