@@ -1421,13 +1421,26 @@ const PackageManager = () => {
                 Kullanılamaz
               </Button>
             ) : (
-              <Button 
-                onClick={() => handleUpgrade(pkg.type)}
-                className="w-full"
-                data-testid={`upgrade-${pkg.type}`}
-              >
-                Yükselt
-              </Button>
+              <div className="space-y-2">
+                <Button 
+                  onClick={() => handlePayment(pkg.type)}
+                  className="w-full"
+                  data-testid={`payment-${pkg.type}`}
+                >
+                  💳 Ödeme Yap
+                </Button>
+                {(user?.email === "admin@dermavision.ai" || user?.email === "muratsimsek003@gmail.com") && (
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDirectUpgrade(pkg.type)}
+                    className="w-full text-xs"
+                    data-testid={`upgrade-${pkg.type}`}
+                  >
+                    Admin: Direkt Yükselt
+                  </Button>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
