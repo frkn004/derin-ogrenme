@@ -96,20 +96,124 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md border-0 shadow-xl bg-white/70 backdrop-blur-sm">
-        <CardHeader className="text-center">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mb-4">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
+      {/* Hero Section */}
+      <div className="container mx-auto px-4 py-12 lg:py-20">
+        <div className="grid lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+          
+          {/* Left Side - Information */}
+          <div className="space-y-8">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </div>
+                <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                  DermaVision AI
+                </h1>
+              </div>
+              
+              <h2 className="text-2xl lg:text-3xl font-semibold text-slate-800 leading-tight">
+                Yapay Zeka ile Profesyonel Cilt Analizi
+              </h2>
+              
+              <p className="text-lg text-slate-600 leading-relaxed">
+                Gelişmiş Vision Transformer teknolojisi ile cildinizi analiz edin. 
+                Kişiselleştirilmiş bakım önerileri alın ve cilt sağlığınızı takip edin.
+              </p>
+            </div>
+
+            {/* Features */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-white/60 backdrop-blur-sm border border-blue-100">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0 mt-1">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-800 mb-1">AI Teknolojisi</h3>
+                  <p className="text-sm text-slate-600">%95 doğruluk oranında cilt tipi analizi</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-white/60 backdrop-blur-sm border border-emerald-100">
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-1">
+                  <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-800 mb-1">Kişisel Bakım</h3>
+                  <p className="text-sm text-slate-600">Size özel ürün önerileri</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-white/60 backdrop-blur-sm border border-purple-100">
+                <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0 mt-1">
+                  <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-800 mb-1">PDF Rapor</h3>
+                  <p className="text-sm text-slate-600">Detaylı analiz raporları</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-white/60 backdrop-blur-sm border border-orange-100">
+                <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0 mt-1">
+                  <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-800 mb-1">Güvenli & Hızlı</h3>
+                  <p className="text-sm text-slate-600">Saniyeler içinde sonuç</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Pricing Preview */}
+            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-200">
+              <h3 className="font-semibold text-slate-800 mb-3">Paketlerimiz</h3>
+              <div className="flex items-center justify-between">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-slate-800">Demo</p>
+                  <p className="text-sm text-slate-600">5 Analiz</p>
+                  <p className="text-lg font-semibold text-green-600">Ücretsiz</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-slate-800">Standart</p>
+                  <p className="text-sm text-slate-600">300 Analiz</p>
+                  <p className="text-lg font-semibold text-blue-600">₺300/ay</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-slate-800">Premium</p>
+                  <p className="text-sm text-slate-600">1000 Analiz</p>
+                  <p className="text-lg font-semibold text-purple-600">₺1000/ay</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <CardTitle className="text-2xl text-slate-800">DermaVision AI</CardTitle>
-          <CardDescription>
-            {isLogin ? 'Hesabınıza giriş yapın' : 'Yeni hesap oluşturun'}
-          </CardDescription>
-        </CardHeader>
+
+          {/* Right Side - Auth Form */}
+          <div className="flex justify-center lg:justify-end">
+            <Card className="w-full max-w-md border-0 shadow-2xl bg-white/80 backdrop-blur-lg">
+              <CardHeader className="text-center pb-4">
+                <CardTitle className="text-2xl text-slate-800 mb-2">
+                  {isLogin ? 'Giriş Yapın' : 'Ücretsiz Başlayın'}
+                </CardTitle>
+                <CardDescription className="text-slate-600">
+                  {isLogin 
+                    ? 'Hesabınıza giriş yaparak analizlerinize devam edin' 
+                    : 'Hemen ücretsiz hesap oluşturun ve ilk analizinizi yapın'
+                  }
+                </CardDescription>
+              </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
