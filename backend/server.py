@@ -188,6 +188,28 @@ class DashboardStats(BaseModel):
     package_type: PackageType
     recent_analyses: List[SkinAnalysisResult]
 
+# New models for payment and admin
+class PaymentRequest(BaseModel):
+    package_type: str  # 'standard' or 'premium'
+
+class PaymentCallbackRequest(BaseModel):
+    token: str
+
+class ProductRecommendationCreate(BaseModel):
+    name: str
+    description: str
+    skin_types: List[str]
+    category: str
+    brand: Optional[str] = ""
+    price_range: Optional[str] = ""
+    ingredients: Optional[List[str]] = []
+    benefits: Optional[List[str]] = []
+    usage_instructions: Optional[str] = ""
+
+class AdminUserUpdate(BaseModel):
+    package_type: str
+    credits_remaining: int
+
 # Utility functions
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
