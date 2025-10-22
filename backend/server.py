@@ -498,6 +498,102 @@ def predict_skin_type(image_bytes: bytes) -> tuple:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
 
+async def seed_initial_recommendations():
+    """Seed database with initial product recommendations"""
+    try:
+        initial_recommendations = [
+            {
+                "id": "rec_cleanser_cerave",
+                "name": "CeraVe Nemlendirici Temizleyici",
+                "description": "Ceramid içeren, hassas ciltler için geliştirilmiş gentle temizleyici",
+                "skin_types": ["dry", "normal"],
+                "category": "cleanser",
+                "brand": "CeraVe",
+                "price_range": "₺80-120",
+                "ingredients": ["Ceramidler", "Hyaluronik Asit", "Niacinamide"],
+                "benefits": ["Nem bariyerini korur", "24 saat nemlendirme", "Paraben free"],
+                "usage_instructions": "Nemli cilde uygulayın, nazikçe masaj yapın ve ılık suyla durulayın.",
+                "created_at": datetime.now(timezone.utc),
+                "active": True
+            },
+            {
+                "id": "rec_cleanser_laroche",
+                "name": "La Roche Posay Effaclar Gel",
+                "description": "Yağlı ve akneye eğilimli ciltler için temizleyici jel",
+                "skin_types": ["oily"],
+                "category": "cleanser",
+                "brand": "La Roche Posay",
+                "price_range": "₺90-130",
+                "ingredients": ["Zinc Pidolate", "Thermal Spring Water"],
+                "benefits": ["Sebum kontrolü", "Gözenek temizliği", "pH dengeleyici"],
+                "usage_instructions": "Sabah ve akşam nemli cilde uygulayın, köpürtün ve durulayın.",
+                "created_at": datetime.now(timezone.utc),
+                "active": True
+            },
+            {
+                "id": "rec_serum_ordinary",
+                "name": "The Ordinary Hyaluronic Acid 2% + B5",
+                "description": "Yoğun nemlendirme sağlayan hyaluronik asit serumu",
+                "skin_types": ["dry", "normal", "oily"],
+                "category": "serum",
+                "brand": "The Ordinary",
+                "price_range": "₺60-90",
+                "ingredients": ["Hyaluronic Acid", "Vitamin B5", "Sodium Hyaluronate"],
+                "benefits": ["Yoğun nemlendirme", "Cildi dolgunlaştırır", "Her cilt tipine uygun"],
+                "usage_instructions": "Temiz cilde birkaç damla uygulayın, nemlendirici öncesi kullanın.",
+                "created_at": datetime.now(timezone.utc),
+                "active": True
+            },
+            {
+                "id": "rec_moisturizer_nivea",
+                "name": "Nivea Soft Nemlendirici Krem",
+                "description": "Günlük kullanım için hafif dokulu nemlendirici",
+                "skin_types": ["normal", "dry"],
+                "category": "moisturizer",
+                "brand": "Nivea",
+                "price_range": "₺25-40",
+                "ingredients": ["Jojoba Oil", "Vitamin E"],
+                "benefits": ["24 saat nemlendirme", "Hızlı emilim", "Yapışkan his yok"],
+                "usage_instructions": "Temiz ve kuru cilde nazikçe uygulayın, masaj yapın.",
+                "created_at": datetime.now(timezone.utc),
+                "active": True
+            },
+            {
+                "id": "rec_sunscreen_vichy",
+                "name": "Vichy Capital Soleil SPF 50+",
+                "description": "Yüksek koruma faktörlü güneş kremi",
+                "skin_types": ["normal", "oily", "dry"],
+                "category": "sunscreen",
+                "brand": "Vichy",
+                "price_range": "₺120-160",
+                "ingredients": ["Mexoryl SX", "Mexoryl XL", "Thermal Water"],
+                "benefits": ["UVA/UVB koruması", "Su geçirmez", "Beyaz iz bırakmaz"],
+                "usage_instructions": "Güneşe çıkmadan 30 dk önce cilde uygulayın, 2 saatte bir yenileyin.",
+                "created_at": datetime.now(timezone.utc),
+                "active": True
+            },
+            {
+                "id": "rec_toner_pixi",
+                "name": "Pixi Glow Tonic",
+                "description": "Glikolik asit içeren aydınlatıcı toner",
+                "skin_types": ["oily", "normal"],
+                "category": "toner",
+                "brand": "Pixi",
+                "price_range": "₺180-220",
+                "ingredients": ["Glycolic Acid", "Aloe Vera", "Ginseng"],
+                "benefits": ["Cilt dokusunu iyileştirir", "Gözenekleri temizler", "Parlaklık verir"],
+                "usage_instructions": "Akşam temizlik sonrası pamuk ile cilde uygulayın, günde 1 kez.",
+                "created_at": datetime.now(timezone.utc),
+                "active": True
+            }
+        ]
+        
+        await db.product_recommendations.insert_many(initial_recommendations)
+        logger.info(f"Seeded {len(initial_recommendations)} initial product recommendations")
+        
+    except Exception as e:
+        logger.error(f"Error seeding recommendations: {str(e)}")
+
 # Authentication Routes
 @api_router.post("/register", response_model=TokenResponse)
 async def register(user_data: UserRegister):
