@@ -689,16 +689,16 @@ const PackageManager = () => {
       type: 'standard',
       name: 'Standart Paket',
       credits: 300,
-      price: '₺49/ay',
-      features: ['300 analiz hakkı', 'Detaylı öneriler', 'Analiz geçmişi'],
+      price: '₺300/ay',
+      features: ['300 analiz hakkı', 'Detaylı öneriler', 'Analiz geçmişi', 'PDF rapor'],
       color: 'border-blue-300 bg-blue-50'
     },
     {
       type: 'premium',
       name: 'Premium Paket',
       credits: 1000,
-      price: '₺99/ay',
-      features: ['1000 analiz hakkı', 'Premium öneriler', 'PDF rapor', '7/24 destek'],
+      price: '₺1000/ay',
+      features: ['1000 analiz hakkı', 'Premium öneriler', 'PDF rapor', 'Öncelik desteği', '7/24 destek'],
       color: 'border-purple-300 bg-purple-50'
     }
   ];
