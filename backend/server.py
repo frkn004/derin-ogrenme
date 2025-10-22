@@ -215,20 +215,37 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 def generate_pdf_report(analysis: SkinAnalysisResult, user_name: str) -> BytesIO:
     """Generate PDF report for skin analysis"""
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    from reportlab.lib.fonts import addMapping
+    
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.8*inch)
+    
+    # Register UTF-8 compatible font
+    try:
+        # Try to use system fonts that support Turkish characters
+        pdfmetrics.registerFont(TTFont('DejaVuSans', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'))
+        pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'))
+        turkish_font = 'DejaVuSans'
+        turkish_font_bold = 'DejaVuSans-Bold'
+    except:
+        # Fallback to Helvetica (may not show Turkish characters correctly)
+        turkish_font = 'Helvetica'
+        turkish_font_bold = 'Helvetica-Bold'
     
     # Get styles
     styles = getSampleStyleSheet()
     
-    # Custom styles
+    # Custom styles with Turkish-compatible fonts
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
         fontSize=24,
         spaceAfter=30,
         alignment=TA_CENTER,
-        textColor=colors.HexColor('#1e40af')
+        textColor=colors.HexColor('#1e40af'),
+        fontName=turkish_font_bold
     )
     
     subtitle_style = ParagraphStyle(
@@ -236,7 +253,8 @@ def generate_pdf_report(analysis: SkinAnalysisResult, user_name: str) -> BytesIO
         parent=styles['Heading2'],
         fontSize=16,
         spaceAfter=20,
-        textColor=colors.HexColor('#374151')
+        textColor=colors.HexColor('#374151'),
+        fontName=turkish_font_bold
     )
     
     normal_style = ParagraphStyle(
@@ -244,7 +262,8 @@ def generate_pdf_report(analysis: SkinAnalysisResult, user_name: str) -> BytesIO
         parent=styles['Normal'],
         fontSize=12,
         spaceAfter=12,
-        textColor=colors.HexColor('#374151')
+        textColor=colors.HexColor('#374151'),
+        fontName=turkish_font
     )
     
     # Content
