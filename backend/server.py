@@ -286,7 +286,7 @@ def generate_pdf_report(analysis: SkinAnalysisResult, user_name: str) -> BytesIO
         ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8fafc')),
         ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#374151')),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTNAME', (0, 0), (-1, -1), turkish_font),
         ('FONTSIZE', (0, 0), (-1, -1), 11),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
         ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb'))
