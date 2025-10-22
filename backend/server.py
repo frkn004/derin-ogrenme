@@ -931,8 +931,20 @@ logger = logging.getLogger(__name__)
 
 @app.on_event("startup")
 async def startup_event():
-    """Load model on startup"""
+    """Initialize services on startup"""
+    global admin_service, recommendation_engine
+    
+    # Initialize services
+    admin_service = AdminService(db)
+    recommendation_engine = RecommendationEngine(db)
+    
+    # Load ML model
     await load_skin_model()
+    
+    # Seed initial product recommendations if collection is empty
+    existing_recs = await db.product_recommendations.count_documents({})
+    if existing_recs == 0:
+        await seed_initial_recommendations()
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
