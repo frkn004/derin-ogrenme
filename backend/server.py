@@ -690,16 +690,105 @@ async def download_analysis_pdf(analysis_id: str, token: str = None, current_use
         logger.error(f"PDF generation error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"PDF oluşturulamadı: {str(e)}")
 
-# Package Management Routes
+# Payment Routes
+@api_router.post("/payment/initialize")
+async def initialize_payment(payment_request: PaymentRequest, current_user: dict = Depends(get_current_user)):
+    """Initialize İyzico payment for package upgrade"""
+    try:
+        # Create checkout form
+        result = iyzico_service.create_checkout_form(current_user, payment_request.package_type)
+        
+        if result['success']:
+            # Store payment session in database
+            payment_session = {
+                "user_id": current_user["id"],
+                "package_type": payment_request.package_type,
+                "token": result['token'],
+                "conversation_id": result['conversation_id'],
+                "status": "initialized",
+                "created_at": datetime.now(timezone.utc)
+            }
+            
+            await db.payment_sessions.insert_one(payment_session)
+            
+            return {
+                "success": True,
+                "checkout_form_content": result['checkout_form_content'],
+                "payment_page_url": result['payment_page_url'],
+                "token": result['token']
+            }
+        else:
+            raise HTTPException(status_code=400, detail=result['error'])
+            
+    except Exception as e:
+        logger.error(f"Payment initialization error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Ödeme başlatılamadı")
+
+@api_router.post("/payment/callback")
+async def payment_callback(callback_request: PaymentCallbackRequest, current_user: dict = Depends(get_current_user)):
+    """Handle İyzico payment callback"""
+    try:
+        # Retrieve payment result
+        result = iyzico_service.retrieve_checkout_form_result(callback_request.token)
+        
+        if result['success'] and result['payment_status'] == 'SUCCESS':
+            # Get payment session
+            payment_session = await db.payment_sessions.find_one({"token": callback_request.token})
+            
+            if payment_session:
+                # Update user package
+                package_type = payment_session['package_type']
+                credits = PACKAGE_CREDITS.get(package_type, 300)
+                
+                await db.users.update_one(
+                    {"id": current_user["id"]},
+                    {
+                        "$set": {
+                            "package_type": package_type,
+                            "credits_remaining": credits
+                        }
+                    }
+                )
+                
+                # Update payment session status
+                await db.payment_sessions.update_one(
+                    {"token": callback_request.token},
+                    {
+                        "$set": {
+                            "status": "completed",
+                            "payment_id": result.get('payment_id'),
+                            "completed_at": datetime.now(timezone.utc)
+                        }
+                    }
+                )
+                
+                return {
+                    "success": True,
+                    "message": "Ödeme başarılı! Paketiniz güncellendi.",
+                    "package_type": package_type,
+                    "credits": credits
+                }
+            else:
+                raise HTTPException(status_code=404, detail="Ödeme oturumu bulunamadı")
+        else:
+            return {
+                "success": False,
+                "message": "Ödeme başarısız oldu",
+                "error": result.get('error', 'Bilinmeyen hata')
+            }
+            
+    except Exception as e:
+        logger.error(f"Payment callback error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Ödeme sonucu işlenemedi")
+
+# Package Management Routes (Updated)
 @api_router.post("/upgrade-package/{package_type}")
 async def upgrade_package(package_type: PackageType, current_user: dict = Depends(get_current_user)):
-    """Upgrade user package (placeholder for payment integration)"""
+    """Direct package upgrade (for admin use)"""
     if package_type == PackageType.DEMO:
         raise HTTPException(status_code=400, detail="Demo paketine geçiş yapılamaz")
     
-    # TODO: Add payment processing here (Iyzico integration)
-    
-    # Update user package
+    # Update user package directly (admin function)
     await db.users.update_one(
         {"id": current_user["id"]},
         {
@@ -710,7 +799,7 @@ async def upgrade_package(package_type: PackageType, current_user: dict = Depend
         }
     )
     
-    return {"message": f"Paket {package_type.value} olarak yükseltildi", "credits": PACKAGE_CREDITS[package_type]}
+    return {"message": f"Paket {package_type.value} olarak güncellendi", "credits": PACKAGE_CREDITS[package_type]}
 
 # General Routes
 @api_router.get("/")
