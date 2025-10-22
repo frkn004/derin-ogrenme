@@ -462,10 +462,14 @@ const Dashboard = () => {
 
         {/* Main Content */}
         <Tabs defaultValue="analyze" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="analyze">Cilt Analizi</TabsTrigger>
             <TabsTrigger value="history">Analiz Geçmişi</TabsTrigger>
+            <TabsTrigger value="recommendations">Ürün Önerileri</TabsTrigger>
             <TabsTrigger value="packages">Paketler</TabsTrigger>
+            {(user?.email === "admin@dermavision.ai" || user?.email === "muratsimsek003@gmail.com") && (
+              <TabsTrigger value="admin">Admin Panel</TabsTrigger>
+            )}
           </TabsList>
           
           <TabsContent value="analyze" className="mt-6">
