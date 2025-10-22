@@ -401,6 +401,8 @@ const SkinAnalyzer = () => {
 
   const downloadPDF = async (analysisId) => {
     try {
+      toast.info('PDF hazırlanıyor...');
+      
       const response = await axios.get(`${API}/analysis/${analysisId}/pdf`, {
         headers: { 
           'Authorization': `Bearer ${localStorage.getItem('token')}` 
@@ -408,18 +410,34 @@ const SkinAnalyzer = () => {
         responseType: 'blob'
       });
       
-      // Create download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `dermavision_analiz_${analysisId.slice(0, 8)}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      
-      toast.success('PDF raporu indirildi!');
+      // Check if response has data
+      if (response.data && response.data.size > 0) {
+        // Create download link
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `dermavision_analiz_${analysisId.slice(0, 8)}.pdf`;
+        
+        // Force download
+        document.body.appendChild(link);
+        link.click();
+        
+        // Cleanup
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        toast.success(`PDF raporu indirildi! (${Math.round(blob.size/1024)} KB)`);
+      } else {
+        toast.error('PDF dosyası boş veya hatalı');
+      }
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'PDF indirilemedi');
+      console.error('PDF download error:', error);
+      if (error.response?.status === 403) {
+        toast.error('PDF raporu için Standart veya Premium paket gereklidir');
+      } else {
+        toast.error(error.response?.data?.detail || 'PDF indirilemedi');
+      }
     }
   };
 
