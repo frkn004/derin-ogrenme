@@ -24,7 +24,7 @@ class IyzicoService:
         try:
             # Package pricing
             pricing = {
-                'standard': '300.0',
+                'standard': '450.0',
                 'premium': '1000.0'
             }
             
