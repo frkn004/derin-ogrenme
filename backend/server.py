@@ -181,6 +181,12 @@ class SkinAnalysisResult(BaseModel):
     recommendations: Dict
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     image_data: Optional[str] = None  # Base64 encoded image for PDF
+    
+    class Config:
+        arbitrary_types_allowed = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
 
 class DashboardStats(BaseModel):
     total_analyses: int
