@@ -1325,6 +1325,10 @@ const AdminPanel = () => {
               </Card>
             </TabsContent>
             
+            <TabsContent value="products" className="mt-6">
+              <ProductManagement />
+            </TabsContent>
+            
             <TabsContent value="logs" className="mt-6">
               <Card>
                 <CardHeader>
