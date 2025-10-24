@@ -748,8 +748,10 @@ async def analyze_skin(file: UploadFile = File(...), current_user: dict = Depend
             image_data=image_data
         )
         
-        # Save to database
-        await db.skin_analyses.insert_one(result.dict())
+        # Save to database - convert to dict and ensure proper serialization
+        result_dict = result.dict()
+        result_dict['timestamp'] = result_dict['timestamp'].isoformat() if isinstance(result_dict['timestamp'], datetime) else result_dict['timestamp']
+        await db.skin_analyses.insert_one(result_dict)
         
         # Deduct credit
         await db.users.update_one(
