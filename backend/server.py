@@ -83,8 +83,8 @@ class PackageType(str, Enum):
 # Package configurations
 PACKAGE_CREDITS = {
     PackageType.DEMO: 5,
-    PackageType.STANDARD: 300,
-    PackageType.PREMIUM: 1000
+    PackageType.STANDARD: 30,
+    PackageType.PREMIUM: 100
 }
 
 # Skin care recommendations database
