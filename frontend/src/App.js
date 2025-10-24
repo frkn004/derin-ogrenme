@@ -1230,9 +1230,10 @@ const AdminPanel = () => {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
               <TabsTrigger value="users">Kullanıcılar</TabsTrigger>
+              <TabsTrigger value="products">Ürünler</TabsTrigger>
               <TabsTrigger value="logs">Loglar</TabsTrigger>
             </TabsList>
             
