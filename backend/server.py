@@ -255,12 +255,24 @@ def generate_pdf_report(analysis: SkinAnalysisResult, user_name: str) -> BytesIO
     
     # Register UTF-8 compatible font
     try:
-        # Try to use system fonts that support Turkish characters
-        pdfmetrics.registerFont(TTFont('DejaVuSans', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'))
-        pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'))
-        turkish_font = 'DejaVuSans'
-        turkish_font_bold = 'DejaVuSans-Bold'
-    except:
+        # Use downloaded DejaVu Sans fonts for Turkish character support
+        font_dir = ROOT_DIR / "fonts"
+        regular_font_path = font_dir / "DejaVuSans.ttf"
+        bold_font_path = font_dir / "DejaVuSans-Bold.ttf"
+        
+        if regular_font_path.exists() and bold_font_path.exists():
+            pdfmetrics.registerFont(TTFont('DejaVuSans', str(regular_font_path)))
+            pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', str(bold_font_path)))
+            turkish_font = 'DejaVuSans'
+            turkish_font_bold = 'DejaVuSans-Bold'
+        else:
+            # Try system fonts
+            pdfmetrics.registerFont(TTFont('DejaVuSans', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'))
+            pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'))
+            turkish_font = 'DejaVuSans'
+            turkish_font_bold = 'DejaVuSans-Bold'
+    except Exception as e:
+        logger.warning(f"Could not load Turkish fonts: {str(e)}. Using Helvetica fallback.")
         # Fallback to Helvetica (may not show Turkish characters correctly)
         turkish_font = 'Helvetica'
         turkish_font_bold = 'Helvetica-Bold'
