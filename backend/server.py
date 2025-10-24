@@ -987,6 +987,43 @@ async def create_product_recommendation(recommendation: ProductRecommendationCre
     else:
         raise HTTPException(status_code=400, detail="Ürün önerisi oluşturulamadı")
 
+@api_router.get("/admin/recommendations")
+async def get_all_product_recommendations(current_user: dict = Depends(get_current_user)):
+    """Get all product recommendations for admin"""
+    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com"]:
+        raise HTTPException(status_code=403, detail="Admin yetkisi gerekli")
+    
+    recommendations = await admin_service.get_product_recommendations()
+    return recommendations
+
+@api_router.put("/admin/recommendations/{recommendation_id}")
+async def update_product_recommendation(
+    recommendation_id: str, 
+    recommendation: ProductRecommendationCreate, 
+    current_user: dict = Depends(get_current_user)
+):
+    """Update product recommendation"""
+    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com"]:
+        raise HTTPException(status_code=403, detail="Admin yetkisi gerekli")
+    
+    success = await admin_service.update_product_recommendation(recommendation_id, recommendation.dict())
+    if success:
+        return {"message": "Ürün önerisi güncellendi"}
+    else:
+        raise HTTPException(status_code=400, detail="Güncelleme başarısız")
+
+@api_router.delete("/admin/recommendations/{recommendation_id}")
+async def delete_product_recommendation(recommendation_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete product recommendation"""
+    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com"]:
+        raise HTTPException(status_code=403, detail="Admin yetkisi gerekli")
+    
+    success = await admin_service.delete_product_recommendation(recommendation_id)
+    if success:
+        return {"message": "Ürün önerisi silindi"}
+    else:
+        raise HTTPException(status_code=400, detail="Silme başarısız")
+
 @api_router.get("/recommendations/{skin_type}")
 async def get_recommendations(skin_type: str, current_user: dict = Depends(get_current_user)):
     """Get personalized product recommendations"""
