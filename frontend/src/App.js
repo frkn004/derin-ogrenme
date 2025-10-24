@@ -1175,6 +1175,275 @@ const ProductRecommendations = () => {
   );
 };
 
+// Product Management Component
+const ProductManagement = () => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    skin_types: [],
+    category: '',
+    brand: '',
+    price_range: '',
+    ingredients: [],
+    benefits: [],
+    usage_instructions: ''
+  });
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/recommendations`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setProducts(response.data);
+    } catch (error) {
+      toast.error('Ürünler alınırken hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const productData = {
+        ...formData,
+        ingredients: formData.ingredients.filter(i => i.trim()),
+        benefits: formData.benefits.filter(b => b.trim())
+      };
+
+      if (editingProduct) {
+        await axios.put(`${API}/admin/recommendations/${editingProduct.id}`, productData, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        toast.success('Ürün güncellendi!');
+      } else {
+        await axios.post(`${API}/admin/recommendations`, productData, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        toast.success('Ürün eklendi!');
+      }
+      
+      setShowAddForm(false);
+      setEditingProduct(null);
+      resetForm();
+      fetchProducts();
+    } catch (error) {
+      toast.error('Ürün işlemi başarısız');
+    }
+  };
+
+  const handleDelete = async (productId) => {
+    if (window.confirm('Bu ürünü silmek istediğinizden emin misiniz?')) {
+      try {
+        await axios.delete(`${API}/admin/recommendations/${productId}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        toast.success('Ürün silindi!');
+        fetchProducts();
+      } catch (error) {
+        toast.error('Silme işlemi başarısız');
+      }
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      skin_types: [],
+      category: '',
+      brand: '',
+      price_range: '',
+      ingredients: [],
+      benefits: [],
+      usage_instructions: ''
+    });
+  };
+
+  const startEdit = (product) => {
+    setEditingProduct(product);
+    setFormData({
+      name: product.name,
+      description: product.description,
+      skin_types: product.skin_types || [],
+      category: product.category,
+      brand: product.brand || '',
+      price_range: product.price_range || '',
+      ingredients: product.ingredients || [],
+      benefits: product.benefits || [],
+      usage_instructions: product.usage_instructions || ''
+    });
+    setShowAddForm(true);
+  };
+
+  if (loading) {
+    return <div className="flex justify-center py-8">
+      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Ürün Yönetimi</h3>
+        <Button onClick={() => {
+          setShowAddForm(true);
+          resetForm();
+          setEditingProduct(null);
+        }}>
+          + Yeni Ürün Ekle
+        </Button>
+      </div>
+
+      {showAddForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{editingProduct ? 'Ürün Düzenle' : 'Yeni Ürün Ekle'}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Ürün Adı</Label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Marka</Label>
+                  <Input
+                    value={formData.brand}
+                    onChange={(e) => setFormData({...formData, brand: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label>Açıklama</Label>
+                <textarea 
+                  className="w-full p-2 border rounded-md"
+                  rows="3"
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Kategori</Label>
+                  <select 
+                    className="w-full p-2 border rounded-md"
+                    value={formData.category}
+                    onChange={(e) => setFormData({...formData, category: e.target.value})}
+                    required
+                  >
+                    <option value="">Seçin</option>
+                    <option value="cleanser">Temizleyici</option>
+                    <option value="moisturizer">Nemlendirici</option>
+                    <option value="serum">Serum</option>
+                    <option value="sunscreen">Güneş Kremi</option>
+                    <option value="toner">Toner</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Fiyat Aralığı</Label>
+                  <Input
+                    value={formData.price_range}
+                    onChange={(e) => setFormData({...formData, price_range: e.target.value})}
+                    placeholder="₺50-100"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label>Uygun Cilt Tipleri</Label>
+                <div className="flex gap-4 mt-2">
+                  {['dry', 'oily', 'normal'].map(type => (
+                    <label key={type} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.skin_types.includes(type)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({...formData, skin_types: [...formData.skin_types, type]});
+                          } else {
+                            setFormData({...formData, skin_types: formData.skin_types.filter(t => t !== type)});
+                          }
+                        }}
+                      />
+                      {type === 'dry' ? 'Kuru' : type === 'oily' ? 'Yağlı' : 'Normal'}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <Button type="submit">
+                  {editingProduct ? 'Güncelle' : 'Ekle'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => {
+                  setShowAddForm(false);
+                  setEditingProduct(null);
+                }}>
+                  İptal
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {products.map((product) => (
+          <Card key={product.id}>
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-base">{product.name}</CardTitle>
+                  <p className="text-sm text-slate-600">{product.brand}</p>
+                </div>
+                <Badge variant="secondary">{product.category}</Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-sm text-slate-700">{product.description}</p>
+              {product.price_range && (
+                <p className="text-sm font-medium text-green-600">{product.price_range}</p>
+              )}
+              <div className="flex flex-wrap gap-1">
+                {product.skin_types?.map(type => (
+                  <Badge key={type} variant="outline" className="text-xs">
+                    {type === 'dry' ? 'Kuru' : type === 'oily' ? 'Yağlı' : 'Normal'}
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button size="sm" variant="outline" onClick={() => startEdit(product)}>
+                  Düzenle
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => handleDelete(product.id)}>
+                  Sil
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // Admin Panel Component
 const AdminPanel = () => {
   const [adminStats, setAdminStats] = useState(null);
