@@ -810,6 +810,35 @@ const SkinAnalyzer = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Product Recommendations */}
+                  {analysisResult.recommendations.product_recommendations && analysisResult.recommendations.product_recommendations.length > 0 && (
+                    <div className="mt-6">
+                      <h5 className="font-medium text-slate-700 mb-3">Size Özel Ürün Önerileri</h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {analysisResult.recommendations.product_recommendations.map((product, index) => (
+                          <div key={index} className="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                            <div className="flex justify-between items-start mb-2">
+                              <h6 className="font-medium text-sm text-slate-800">{product.name}</h6>
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                {product.category}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-600 mb-2">{product.brand}</p>
+                            <p className="text-xs text-slate-700 mb-2">{product.description}</p>
+                            {product.price_range && (
+                              <p className="text-xs font-medium text-green-600 mb-2">{product.price_range}</p>
+                            )}
+                            {product.recommendation_reason && (
+                              <div className="text-xs bg-blue-50 p-2 rounded border-l-2 border-blue-300">
+                                <p className="text-blue-700">{product.recommendation_reason}</p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
