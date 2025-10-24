@@ -712,8 +712,20 @@ async def analyze_skin(file: UploadFile = File(...), current_user: dict = Depend
         # Predict skin type
         skin_type, confidence, probabilities = predict_skin_type(image_bytes)
         
-        # Get recommendations
-        recommendations = SKIN_RECOMMENDATIONS.get(skin_type, {})
+        # Get static recommendations
+        static_recommendations = SKIN_RECOMMENDATIONS.get(skin_type, {})
+        
+        # Get dynamic product recommendations from database
+        try:
+            product_recommendations = await recommendation_engine.get_personalized_recommendations(
+                current_user["id"], skin_type, confidence
+            )
+        except:
+            product_recommendations = []
+        
+        # Combine both recommendation types
+        recommendations = static_recommendations.copy()
+        recommendations["product_recommendations"] = product_recommendations[:4]  # Limit to top 4
         
         # Convert image to base64 for PDF generation (if user has standard/premium)
         image_data = None
