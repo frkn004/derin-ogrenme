@@ -188,12 +188,12 @@ const AuthPage = () => {
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-bold text-slate-800">Standart</p>
-                  <p className="text-sm text-slate-600">300 Analiz</p>
-                  <p className="text-lg font-semibold text-blue-600">₺300/ay</p>
+                  <p className="text-sm text-slate-600">30 Analiz</p>
+                  <p className="text-lg font-semibold text-blue-600">₺450/ay</p>
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-bold text-slate-800">Premium</p>
-                  <p className="text-sm text-slate-600">1000 Analiz</p>
+                  <p className="text-sm text-slate-600">100 Analiz</p>
                   <p className="text-lg font-semibold text-purple-600">₺1000/ay</p>
                 </div>
               </div>
