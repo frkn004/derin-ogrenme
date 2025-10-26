@@ -673,7 +673,11 @@ async def login(user_data: UserLogin):
 @api_router.get("/me", response_model=UserResponse)
 async def get_current_user_info(current_user: dict = Depends(get_current_user)):
     """Get current user information"""
-    return UserResponse(**current_user)
+    # Clean MongoDB document for Pydantic
+    user_data = current_user.copy()
+    if '_id' in user_data:
+        del user_data['_id']
+    return UserResponse(**user_data)
 
 @api_router.get("/dashboard", response_model=DashboardStats)
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
