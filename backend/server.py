@@ -805,6 +805,9 @@ async def download_analysis_pdf(analysis_id: str, token: str = None, current_use
     if not analysis_doc:
         raise HTTPException(status_code=404, detail="Analiz bulunamadı")
     
+    # Clean MongoDB document for Pydantic
+    if '_id' in analysis_doc:
+        del analysis_doc['_id']
     analysis = SkinAnalysisResult(**analysis_doc)
     
     try:
