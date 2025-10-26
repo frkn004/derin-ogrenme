@@ -778,7 +778,13 @@ async def get_analysis_history(current_user: dict = Depends(get_current_user)):
         analyses = await db.skin_analyses.find(
             {"user_id": current_user["id"]}
         ).sort("timestamp", -1).limit(50).to_list(50)
-        return [SkinAnalysisResult(**analysis) for analysis in analyses]
+        # Clean MongoDB documents for Pydantic
+        cleaned_analyses = []
+        for analysis in analyses:
+            if '_id' in analysis:
+                del analysis['_id']
+            cleaned_analyses.append(SkinAnalysisResult(**analysis))
+        return cleaned_analyses
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Geçmiş alınamadı: {str(e)}")
 
