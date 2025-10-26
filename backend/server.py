@@ -685,7 +685,13 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     ).sort("timestamp", -1).limit(5)
     
     recent_analyses = await recent_analyses_cursor.to_list(5)
-    recent_analyses = [SkinAnalysisResult(**analysis) for analysis in recent_analyses]
+    # Clean MongoDB documents for Pydantic
+    cleaned_analyses = []
+    for analysis in recent_analyses:
+        if '_id' in analysis:
+            del analysis['_id']
+        cleaned_analyses.append(SkinAnalysisResult(**analysis))
+    recent_analyses = cleaned_analyses
     
     return DashboardStats(
         total_analyses=total_analyses,
