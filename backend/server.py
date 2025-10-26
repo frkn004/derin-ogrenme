@@ -660,6 +660,10 @@ async def login(user_data: UserLogin):
     # Create token
     access_token = create_access_token(data={"sub": user_data.email})
     
+    # Clean MongoDB document for Pydantic
+    if '_id' in user:
+        del user['_id']
+    
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
