@@ -95,3 +95,7 @@ backend/models/vit_b16_skin_state_dict.pth
 # Environment files
 *.env
 *.env.*
+-e 
+# Environment files
+*.env
+*.env.*
