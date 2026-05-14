@@ -179,6 +179,7 @@ class SkinAnalysisResult(BaseModel):
     confidence: float
     probabilities: Dict[str, float]
     recommendations: Dict
+    description: Optional[str] = None  # Skin type description
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     image_data: Optional[str] = None  # Base64 encoded image for PDF
     
@@ -247,8 +248,10 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         return user
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token süresi dolmuş")
-    except jwt.JWTError:
+    except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Geçersiz token")
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Token hatası: {str(e)}")
 
 def generate_pdf_report(analysis: SkinAnalysisResult, user_name: str) -> BytesIO:
     """Generate PDF report for skin analysis"""
@@ -740,6 +743,10 @@ async def analyze_skin(file: UploadFile = File(...), current_user: dict = Depend
             product_recommendations = await recommendation_engine.get_personalized_recommendations(
                 current_user["id"], skin_type, confidence
             )
+            # Clean MongoDB _id from recommendations
+            for rec in product_recommendations:
+                if '_id' in rec:
+                    del rec['_id']
         except:
             product_recommendations = []
         
@@ -759,13 +766,16 @@ async def analyze_skin(file: UploadFile = File(...), current_user: dict = Depend
             confidence=confidence,
             probabilities=probabilities,
             recommendations=recommendations,
+            description=static_recommendations.get("description", ""),
             image_data=image_data
         )
         
         # Save to database - convert to dict and ensure proper serialization
         result_dict = result.dict()
         result_dict['timestamp'] = result_dict['timestamp'].isoformat() if isinstance(result_dict['timestamp'], datetime) else result_dict['timestamp']
-        await db.skin_analyses.insert_one(result_dict)
+        
+        # Insert to database and get the inserted ID
+        insert_result = await db.skin_analyses.insert_one(result_dict)
         
         # Deduct credit
         await db.users.update_one(
@@ -773,6 +783,8 @@ async def analyze_skin(file: UploadFile = File(...), current_user: dict = Depend
             {"$inc": {"credits_remaining": -1}}
         )
         
+        # Return clean result without MongoDB ObjectId
+        # Use the original result object's ID (UUID)
         return result
         
     except Exception as e:
@@ -957,7 +969,7 @@ async def upgrade_package(package_type: PackageType, current_user: dict = Depend
 async def get_admin_dashboard(current_user: dict = Depends(get_current_user)):
     """Get admin dashboard statistics"""
     # Check if user is admin (you can add admin role check here)
-    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com"]:  # Replace with actual admin emails
+    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com", "frkn@gmail.com"]:
         raise HTTPException(status_code=403, detail="Admin yetkisi gerekli")
     
     stats = await admin_service.get_dashboard_stats()
@@ -966,7 +978,7 @@ async def get_admin_dashboard(current_user: dict = Depends(get_current_user)):
 @api_router.get("/admin/users")
 async def get_admin_users(skip: int = 0, limit: int = 50, current_user: dict = Depends(get_current_user)):
     """Get users list for admin"""
-    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com"]:
+    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com", "frkn@gmail.com"]:
         raise HTTPException(status_code=403, detail="Admin yetkisi gerekli")
     
     users = await admin_service.get_users_list(skip, limit)
@@ -975,7 +987,7 @@ async def get_admin_users(skip: int = 0, limit: int = 50, current_user: dict = D
 @api_router.get("/admin/user/{user_id}")
 async def get_admin_user_details(user_id: str, current_user: dict = Depends(get_current_user)):
     """Get detailed user information"""
-    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com"]:
+    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com", "frkn@gmail.com"]:
         raise HTTPException(status_code=403, detail="Admin yetkisi gerekli")
     
     user = await admin_service.get_user_details(user_id)
@@ -987,7 +999,7 @@ async def get_admin_user_details(user_id: str, current_user: dict = Depends(get_
 @api_router.put("/admin/user/{user_id}/package")
 async def update_user_package_admin(user_id: str, update_data: AdminUserUpdate, current_user: dict = Depends(get_current_user)):
     """Update user package (admin only)"""
-    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com"]:
+    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com", "frkn@gmail.com"]:
         raise HTTPException(status_code=403, detail="Admin yetkisi gerekli")
     
     success = await admin_service.update_user_package(user_id, update_data.package_type, update_data.credits_remaining)
@@ -999,7 +1011,7 @@ async def update_user_package_admin(user_id: str, update_data: AdminUserUpdate, 
 @api_router.get("/admin/logs")
 async def get_admin_logs(skip: int = 0, limit: int = 100, current_user: dict = Depends(get_current_user)):
     """Get system logs"""
-    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com"]:
+    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com", "frkn@gmail.com"]:
         raise HTTPException(status_code=403, detail="Admin yetkisi gerekli")
     
     logs = await admin_service.get_system_logs(skip, limit)
@@ -1009,7 +1021,7 @@ async def get_admin_logs(skip: int = 0, limit: int = 100, current_user: dict = D
 @api_router.post("/admin/recommendations")
 async def create_product_recommendation(recommendation: ProductRecommendationCreate, current_user: dict = Depends(get_current_user)):
     """Create new product recommendation"""
-    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com"]:
+    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com", "frkn@gmail.com"]:
         raise HTTPException(status_code=403, detail="Admin yetkisi gerekli")
     
     rec_id = await admin_service.create_product_recommendation(recommendation.dict())
@@ -1021,10 +1033,16 @@ async def create_product_recommendation(recommendation: ProductRecommendationCre
 @api_router.get("/admin/recommendations")
 async def get_all_product_recommendations(current_user: dict = Depends(get_current_user)):
     """Get all product recommendations for admin"""
-    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com"]:
+    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com", "frkn@gmail.com"]:
         raise HTTPException(status_code=403, detail="Admin yetkisi gerekli")
     
     recommendations = await admin_service.get_product_recommendations()
+    
+    # Clean MongoDB _id from all recommendations
+    for rec in recommendations:
+        if '_id' in rec:
+            del rec['_id']
+    
     return recommendations
 
 @api_router.put("/admin/recommendations/{recommendation_id}")
@@ -1034,7 +1052,7 @@ async def update_product_recommendation(
     current_user: dict = Depends(get_current_user)
 ):
     """Update product recommendation"""
-    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com"]:
+    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com", "frkn@gmail.com"]:
         raise HTTPException(status_code=403, detail="Admin yetkisi gerekli")
     
     success = await admin_service.update_product_recommendation(recommendation_id, recommendation.dict())
@@ -1046,7 +1064,7 @@ async def update_product_recommendation(
 @api_router.delete("/admin/recommendations/{recommendation_id}")
 async def delete_product_recommendation(recommendation_id: str, current_user: dict = Depends(get_current_user)):
     """Delete product recommendation"""
-    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com"]:
+    if current_user.get("email") not in ["admin@dermavision.ai", "muratsimsek003@gmail.com", "frkn@gmail.com"]:
         raise HTTPException(status_code=403, detail="Admin yetkisi gerekli")
     
     success = await admin_service.delete_product_recommendation(recommendation_id)

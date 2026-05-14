@@ -1,70 +1,76 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# IDE and editors
+# ─── IDE / Editors ────────────────────────────────────────────────────────────
 .idea/
 .vscode/
+*.swp
+*.swo
 
-# Dependencies
+# ─── OS Files ─────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.pem
+
+# ─── Environment & Secrets ────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*token.json
+*credentials.json
+
+# ─── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+
+# ─── Node / JavaScript ────────────────────────────────────────────────────────
 node_modules/
-/node_modules
 /.pnp
 .pnp.js
 .yarn/install-state.gz
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# Testing
-/coverage
-
-# Next.js
-/.next/
-/out/
-next-env.d.ts
-*.tsbuildinfo
-
-# Production builds
-/build
-dist/
-dist
-
-# Environment files (comprehensive coverage)
-
-*token.json*
-*credentials.json*
-
-# Logs and debug files
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.tsbuildinfo
+/coverage
+/build
+/.next/
+/out/
+next-env.d.ts
+
+# ─── ML Model Weights (large binary files) ────────────────────────────────────
+backend/models/*.pth
+backend/models/*.pt
+backend/models/*.onnx
+backend/models/*.h5
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+backend/backend.log
 dump.rdb
 
-# System files
-.DS_Store
-*.pem
+# ─── Mobile / Expo ────────────────────────────────────────────────────────────
+mobile-app/.expo/devices.json
+mobile-app/.expo/xcodebuild*.log
+mobile-app/ios/build/
+mobile-app/ios/Pods/
+mobile-app/android/.gradle/
+mobile-app-old/
 
-# Python
-__pycache__/
-*pyc*
-venv/
-.venv/
-
-# Development tools
-chainlit.md
-.chainlit
-.ipynb_checkpoints/
-.ac
-
-# Deployment
+# ─── Frontend Build ───────────────────────────────────────────────────────────
+frontend/build/
+dist/
+.cache/
 .vercel
 
-# Data and databases
-agenthub/agents/youtube/db
-
-# Archive files and large assets
+# ─── Archive & Large Assets ───────────────────────────────────────────────────
 **/*.zip
 **/*.tar.gz
 **/*.tar
@@ -73,29 +79,13 @@ agenthub/agents/youtube/db
 *.deb
 *.dylib
 
-# Build caches
-.cache/
+# ─── Test Artifacts ───────────────────────────────────────────────────────────
+test_report.pdf
+test_result.md
 
-# Mobile development
-android-sdk/ backend/models/vit_b16_skin_state_dict.pth
-backend/models/vit_b16_skin_state_dict.pth
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
+# ─── Misc Dev Tools ───────────────────────────────────────────────────────────
+.emergent/
+chainlit.md
+.chainlit
+.ipynb_checkpoints/
+android-sdk/
